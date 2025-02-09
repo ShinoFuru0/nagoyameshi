@@ -1,0 +1,294 @@
+html {
+   font-size: 14px;
+ }
+ 
+ body {
+   font-family: 'Noto Sans JP', sans-serif;  
+ }
+ 
+ h1 {
+   font-size: 1.7rem;
+ }
+ 
+ h2 {
+	 font-size: 1.3rem;
+ }
+ 
+ h3 {
+	 font-size: 1.2rem;
+ }
+ 
+ a {
+	 color: #a35214;
+	 text-decoration: none !important;
+ }
+ 
+p {
+	color: #77787b;
+}
+ 
+ a:hover{
+	 color: #94370f;
+ }
+ 
+ main {
+	 margin-left: 75px;
+	 margin-right: 75px;
+ }
+ 
+ .nagoyameshi-wrapper {
+   min-height: 100vh;
+   position: relative;
+   padding-bottom: 60px;
+   box-sizing: border-box;
+ }
+ footer {
+   width: 100%;
+   height: 60px;
+   position: fixed;
+   bottom: 0;    
+   background-color: #F0EEED;
+   
+   }
+   
+.nagoyameshi_description{
+	font-size: 17px;
+}
+ 
+ .nagoyameshi-navbar {
+   min-height: 60px;
+ }
+ 
+ .nagoyameshi-logo {
+	 
+	 margin-left: 100px;
+   height: 50px;
+   width: auto;   
+ }
+ 
+ .nagoyameshi-btn{
+	 background-color: #94736c !important;
+	 
+ }
+ 
+.nagoyameshi-page-link,.nagoyameshi-page-link1,.nagoyameshi-page-link2{
+	 color: #94736c ;
+}
+
+.nagoyameshi-page-link:hover,.nagoyameshi-page-link1:hover,.nagoyameshi-page-link2:hover{
+	color: #94736c ;
+	}
+.nagoyameshi-active {
+	background-color: #94736c !important ;
+	border-color: #94736c !important;
+}
+	
+.img-frame{
+   position: relative;
+   width: 70%;
+   height: 600px;
+   overflow: hidden;
+   margin: 0 auto;
+}
+
+
+.img-01, .img-02, .img-03{
+   position: absolute;
+   top:0;
+   left:0;
+   width: 100%;
+   height: 100%;
+   background-size: cover;
+   background-repeat: no-repeat;
+}
+.img-01{
+   animation: slide-animation-01 24s infinite;
+}
+.img-02{
+   animation: slide-animation-02 24s infinite;
+}
+.img-03{
+   animation: slide-animation-03 24s infinite;
+}
+@keyframes slide-animation-01 {
+    0% {opacity: 1; transform: scale(1.0);}
+  30% {opacity: 1;}
+  40% {opacity: 0; transform: scale(1.15);}
+  90% {opacity: 0}
+100% {opacity: 1; transform: scale(1.0);}
+}
+@keyframes slide-animation-02 {
+    0% {opacity: 0;}
+  30% {opacity: 0; transform: scale(1.1);}
+  40% {opacity: 1;}
+  60% {opacity: 1;}
+  70% {opacity: 0; transform: scale(1.0);}
+100% {opacity: 0;}
+}
+@keyframes slide-animation-03 {
+    0% {opacity: 0;}
+  60% {opacity: 0;  transform: scale(1.0);}
+  70% {opacity: 1;}
+  90% {opacity: 1;}
+100% {opacity: 0; transform: scale(1.1);}
+}
+
+
+.nagoyameshi-search-form {
+	width: 450px;
+	margin: 0 0 0 auto;
+ }
+ 
+ .nagoyameshi-sort-box {
+	 background-color: #F0EEED;
+	 width: 150px;
+ }
+ 
+ 
+ 
+ .nagoyameshi-activ{
+	 background-color:#94736c !important;
+ }
+ 
+ .table{
+	 text-align: center;
+ }
+ 
+ .nagoyameshi-star{
+	 color: darkorange;
+ }
+ 
+ .nagoyameshi-link-danger{
+	 
+	 color: red;
+ }
+ 
+ .nagoyameshi-btn-danger{
+	 background-color: red !important;
+ }
+ 
+ .nagoyameshi-dropdown-item:active {
+    background-color: #5196a6;
+  }
+ 
+ .img-subscription-01{
+	 height: 180px;
+	 width: 130px;
+ }
+ .img-subscription-02{
+	 height: 180px;
+	 width: 230px;
+ }
+ 
+ .card-form{
+	 margin-top: 75px;
+	 margin-bottom: 45px;
+	 
+ }
+ 
+ .favorite-btn{
+	 color: #a35214;
+ }
+ 
+ .favorite-btn:hover{
+	 color: #a35214;
+ }
+ 
+#map {
+  height: 400px;
+  width: 600px;
+ left: 180px;
+}
+.tab {
+  max-width: 800px;
+  margin: 0 auto;
+  margin-top: 120px;
+}
+
+/* タブメニュー */
+.tab__menu {
+  display: flex;
+  align-items: flex-end; /* メニューを下揃え&高さを調整 */
+  justify-content: center;
+  min-height: 50px; /* メニュー切替時にタブがズレないように */
+  padding: 0;
+  margin: 0;
+}
+
+.tab__menu-item {
+  list-style: none;
+  width: 200px;
+  padding: 8px 5px;
+  text-align: center;
+  margin-right: 6px;
+  background-color: #cdcdcd;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  cursor: pointer;
+  transition: all .3s;
+}
+
+.tab__menu-item:last-of-type {
+  margin-right: 0px;
+}
+
+
+.tab__menu-item.is-active {
+  background-color: #94736c;
+  color: #ffffff;
+  padding: 12px 5px;
+}
+
+.tab__panel {
+ width: 100%;
+}
+
+.tab__panel-box {
+  min-height: 400px; 
+  padding: 10px 30px;
+  border-radius: 10px;
+}
+
+.tab__panel-box001 {
+  
+  display: none;
+}
+
+.tab__panel-box002 {
+ 
+  display: none;
+}
+
+
+
+.tab__panel-box.is-show {
+  display: block;
+}
+
+.total-count {
+	font-size: 30px;
+}
+
+.total-count2 {
+	font-size: 45px;
+	color:#b92125 ;
+}
+h4{
+	font-size: 30px;
+	color: #77787b;
+}
+.total1{
+	position: relative;
+	left: 85px;
+}
+
+.total2 {
+	position: relative;
+	left: 585px;
+	bottom: 395px;
+}
+ @media screen and (min-width: 1400ox){
+	.nagoyameshi-container{
+		max-width: 1200px;
+	}
+	}

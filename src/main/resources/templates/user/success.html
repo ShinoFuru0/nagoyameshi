@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">    
+    <head>
+        <div th:replace="~{fragment :: meta}"></div>   
+             <meta name="csrf-token" th:content="${_csrf.token}">
+        <div th:replace="~{fragment :: styles}"></div>
+          
+        <title>サブスクリプション</title>   
+    </head>
+    <body>
+        <div class="samuraitravel-wrapper">
+            <!-- ヘッダー -->
+            <div th:replace="~{fragment :: header}"></div>
+            
+            <main>
+				<div>
+					<h1>登録完了</h1>
+				</div>
+				
+            </main>
+        </div>
+        </body>
+        <!-- フッター -->
+            <div th:replace="~{fragment :: footer}"></div>
+        </div>    
+        
+        <div th:replace="~{fragment :: scripts}"></div>  
+        
+<!--		決済手続き(Stripe)の処理を実行するライブラリを取得-->
+			<script src="https://js.stripe.com/v3"></script>
+<!--		Thymeleafのテンプレート側で受け取った変数sessionIdの値をJavaScriptコードに埋め込む処理-->
+        	<script th:inline="javascript">
+        		const sessionId = /*[[${sessionId}]]*/"sessionId";                
+        	</script>
+<!--        Stripe処理を実行するjsファイル-->
+         	<script type="module" src="/js/stripe.js"></script> 
+</html>

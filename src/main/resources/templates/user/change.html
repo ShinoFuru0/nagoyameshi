@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">    
+    <head>
+        <div th:replace="~{fragment :: meta}"></div>   
+         <meta name="csrf-token" th:content="${_csrf.token}">
+        <div th:replace="~{fragment :: styles}"></div>
+          
+        <title>サブスクリプション変更</title>   
+    </head>
+      <body>
+        <div class="samuraitravel-wrapper">
+            <!-- ヘッダー -->
+            <div th:replace="~{fragment :: header}"></div>
+            
+            <form id="cardForm"  th:action="@{/user/update-payment-method}" method="post">
+	<input type="hidden" name="csrf-token" th:value="${_csrf.token}">
+    <div id="cardElementError"></div>
+    <input id="cardHolderName" type="text" placeholder="カード名義人" required>
+    <div id="cardElement"></div>
+    <button id="cardButton" class="btn">変更</button>
+</form>
+							
+							<div sec:authorize="hasRole('ROLE_FREE')">
+        						<a href="#">会員ホームに戻る</a>
+							</div>
+                            
+                            
+                        </div>
+                    </div>
+        </div>
+      </body>
+      <!-- フッター -->
+            <div th:replace="~{fragment :: footer}"></div>
+        </div>    
+        
+        <div th:replace="~{fragment :: scripts}"></div>  
+        
+<!--		決済手続き(Stripe)の処理を実行するライブラリを取得-->
+			<script src="https://js.stripe.com/v3"></script>
+<!--		Thymeleafのテンプレート側で受け取った変数sessionIdの値をJavaScriptコードに埋め込む処理-->
+        	<script th:inline="javascript">
+        		const sessionId = /*[[${sessionId}]]*/"sessionId";                
+        	</script>
+<!--        Stripe処理を実行するjsファイル-->
+         	<script type="module" src="/js/change.js"></script> 
+</html>

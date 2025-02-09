@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+ <html xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+	
+	<head>
+		<div th:replace="~{fragment::meta}"></div>
+		
+		<div th:replace="~{fragment::styles}"></div>
+		
+		<title>お気に入り店舗一覧</title>
+	</head>
+	<body>
+		<div class="nagoyameshi-wrapper">
+			<div th:replace="~{fragment::header}"></div>
+			
+			<main>
+				<div class="container pt-4 pb-5 nagoyameshi-container">
+					<div class="row justify-content-center">
+						<div class="col-xxl-9 col-xl-10 col-lg-11">
+							
+							<h1 class="mb-4 text-center">お気に入り店舗一覧</h1>
+							
+							
+							
+							
+							
+							 <div class="mb-3" th:each="fav : ${favPage}">
+                                 <a th:href="@{/shop/__${fav.getShop().getId()}__}" class="link-dark nagoyameshi-card-link">
+                                     <div class="card h-100">   
+                                         <div class="row g-0">
+                                             <div class="col-md-4">                                                                                
+                                                 <img th:if="${fav.getShop().getImageName()}" th:src="@{/storage/__${fav.getShop().getImageName()}__}" class="card-img-top nagoyameshi-horizontal-card-image" alt="店舗画像">                                                     
+                                                 <img th:unless="${fav.getShop().getImageName()}" th:src="@{/images/noImage.png}" class="card-img-top nagoyameshi-horizontal-card-image" alt="NO IMAGE">                                                    
+                                             </div> 
+                                             <div class="col-md-8">                                                                                                                        
+                                                 <div class="card-body">                                    
+                                                     <h3 class="card-title mb-3" th:text="${fav.getShop().getName()}"></h3>                                            
+  
+                                                     <hr class="mb-3">
+                                                     
+                                                     <p class="card-text mb-2">
+                                                         <span th:text="${fav.getShop().getDescription()}"></span>
+                                                     </p>                                                    
+                                                     
+                                                     <p class="card-text mb-2">
+                                                        
+                                                         <small class="text-muted" th:text="${fav.getShop().getAddress()}"></small>                                                      
+                                                     </p>   
+                                                                                                                                                                                                                                    
+                                                                                      
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>    
+                                 </a>            
+                             </div>
+                             
+                              <div th:if="${favPage.getTotalPages() > 1}" class="d-flex justify-content-center">
+                                 <nav aria-label="店舗一覧ページ">
+                                     <ul class="pagination">
+                                         <li class="page-item">
+                                             <span th:if="${favPage.isFirst()}" class="page-link disabled">前</span>
+                                             <a th:unless="${favPage.isFirst()}" th:href="@{/fav(page = ${favPage.getNumber() - 1})}" class="page-link nagoyameshi-page-link">前</a>
+                                         </li>
+                                         <li th:each="i : ${#numbers.sequence(0, favPage.getTotalPages() - 1)}" class="page-item">
+                                             <span th:if="${i == favPage.getNumber()}" class="page-link active nagoyameshi-active" th:text="${i + 1}"></span>
+                                             <a th:unless="${i == favPage.getNumber()}" th:href="@{/fav(page = ${i})}" class="page-link nagoyameshi-page-link" th:text="${i + 1}"></a>
+                                         </li>
+                                         <li class="page-item">                        
+                                             <span th:if="${favPage.isLast()}" class="page-link disabled">次</span>
+                                              <a th:unless="${favPage.isLast()}" th:href="@{/fav(page = ${favPage.getNumber() + 1})}" class="page-link nagoyameshi-page-link">次</a>
+                                         </li>
+                                     </ul>
+                                 </nav> 
+                             </div>
+							
+								
+						</div>
+					</div>
+				</div>
+			</main>
+			
+			<div th:replace="~{fragment::footer}"></div>
+		</div>
+		
+		<div th:replace="~{fragment::scripts}"></div>
+	</body>
+</html>
