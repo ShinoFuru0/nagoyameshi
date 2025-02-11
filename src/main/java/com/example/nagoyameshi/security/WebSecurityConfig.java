@@ -18,7 +18,7 @@ public class WebSecurityConfig {
              .authorizeHttpRequests((requests) -> requests                
             		 .requestMatchers("/css/**", "/images/**", "/js/**", "/storage/**", "/", "/signup/**","/passreset/**","/reset-password/**","/passedit/**", "/shop","/reset-password", "/shop/{id}","/error","/user/create-checkout-session", "/stripe/webhook").permitAll()  // すべてのユーザーにアクセスを許可するURL 
                  .requestMatchers("/admin/**").hasRole("ADMIN") // 管理者にのみアクセスを許可するURL
-                 .requestMatchers("/fav/**","/reservations/**","/review/**","/user/cancel","user/cancel-subscription").hasRole("PAID_MEMBER")
+                 .requestMatchers("/fav/**","/reservations/**","/review/**","/user/cancel","user/cancel-subscription").hasRole("PREMIUM")
                  		
                  .anyRequest().authenticated()                   // 上記以外のURLはログインが必要（会員または管理者のどちらでもOK）
              )
