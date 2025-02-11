@@ -146,7 +146,7 @@ String paymentMethodId = payload.get("paymentMethodId");
 stripeService.updateSubscription(customerId,paymentMethodId);
 System.out.println("テスト紐付け");
 // 事前に作成したプランIDでサブスクリプションを作成
-String planId = "price_1QTlYlBZ4UD9z1bMerQL8aai"; // 事前にStripeで作成したプランIDを指定します
+String planId = "price_1QqVPqC7xSmMs4vI9ZQ5EMzg"; // 事前にStripeで作成したプランIDを指定します
 System.out.println("プランID"+planId);
 Subscription subscription = stripeService.createSubscription(user.getCustomerId(), planId);
 //stripeService.createSubscription(user.getCustomerId(), planId);
