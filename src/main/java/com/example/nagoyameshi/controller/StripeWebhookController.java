@@ -9,38 +9,42 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
 import com.example.nagoyameshi.Service.StripeService;
-import com.stripe.Stripe;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.net.Webhook;
 
 @Controller
 public class StripeWebhookController {
-	 private final StripeService stripeService;
-	 
-     @Value("${stripe.api-key}")
-     private String stripeApiKey;
- 
-     @Value("${stripe.webhook-secret}")
-     private String webhookSecret;
- 
-     public StripeWebhookController(StripeService stripeService) {
-         this.stripeService = stripeService;
-     }
- 
-     @PostMapping("/stripe/webhook")
-     public ResponseEntity<String> webhook(@RequestBody String payload, @RequestHeader("Stripe-Signature") String sigHeader) {
-         Stripe.apiKey = stripeApiKey;
-         Event event = null;
- 
-         try {
-             event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
-         } catch (SignatureVerificationException e) {
-             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-         }
- 
+    private final StripeService stripeService;
 
- 
-         return new ResponseEntity<>("Success", HttpStatus.OK);
-     }
+    @Value("${stripe.webhook-secret}")
+    private String webhookSecret;
+
+    public StripeWebhookController(StripeService stripeService) {
+        this.stripeService = stripeService;
+    }
+
+    @PostMapping("/stripe/webhook")
+    public ResponseEntity<String> webhook(@RequestBody String payload, 
+                                          @RequestHeader("Stripe-Signature") String sigHeader) {
+        Event event;
+        try {
+            event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+        } catch (SignatureVerificationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid signature");
+        }
+
+        switch (event.getType()) {
+            case "invoice.payment_succeeded":
+                stripeService.handleSuccessfulPayment(event);
+                break;
+            case "customer.subscription.deleted":
+                stripeService.handleSubscriptionCanceled(event);
+                break;
+            default:
+                System.out.println("Unhandled event type: " + event.getType());
+        }
+
+        return ResponseEntity.ok("Success");
+    }
 }
