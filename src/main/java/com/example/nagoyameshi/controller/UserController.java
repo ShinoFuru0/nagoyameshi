@@ -107,10 +107,12 @@ public class UserController {
             if (defaultPaymentMethod == null) {
                 String paymentMethodId = payload.get("paymentMethodId");
                 stripeService.attachPaymentMethodToCustomer(customerId, paymentMethodId);
+                // フォームから送信された支払い方法を顧客のデフォルトの支払い方法に設定する
+                stripeService.setDefaultPaymentMethod(paymentMethodId, customerId);
             }
 
             // プランID（事前作成したStripeのID）
-            String planId = "price_1QqVPqC7xSmMs4vI9ZQ5EMzg";
+            String planId = "price_1MHqDLDE8QnuZC9egb8tuRXw";
 
             // サブスクリプション作成
             Subscription subscription = stripeService.createSubscription(user.getCustomerId(), planId);
@@ -138,8 +140,8 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while creating subscription: " + e.getMessage());
         }
+        
     }
-    
     
  // 支払い方法更新
     @PostMapping("/update-payment-method")
