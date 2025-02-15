@@ -31,23 +31,43 @@ public class UserService {
          this.verificationTokenRepository = verificationTokenRepository;
      }    
      
+     
+     
      @Transactional
      public User create(SignupForm signupForm) {
          User user = new User();
-         Role role = roleRepository.findByName("ROLE_GENERAL");
          
+         // Optional<Role> から Role を取得
+         Role role = roleRepository.findByName("ROLE_GENERAL")
+                 .orElseThrow(() -> new RuntimeException("Role not found"));
+
          user.setName(signupForm.getName());
          user.setFurigana(signupForm.getFurigana());
-        
-        
-        
          user.setEmail(signupForm.getEmail());
          user.setPassword(passwordEncoder.encode(signupForm.getPassword()));
          user.setRole(role);
          user.setEnabled(false);
-         
+
          return userRepository.save(user);
-     }    
+     }
+     
+ //    @Transactional
+ //    public User create(SignupForm signupForm) {
+  //       User user = new User();
+    //     Role role = roleRepository.findByName("ROLE_GENERAL");
+         
+      //   user.setName(signupForm.getName());
+      //   user.setFurigana(signupForm.getFurigana());
+        
+        
+        
+      //   user.setEmail(signupForm.getEmail());
+      //   user.setPassword(passwordEncoder.encode(signupForm.getPassword()));
+      //   user.setRole(role);
+      //   user.setEnabled(false);
+         
+      //   return userRepository.save(user);
+  //   }    
      
      @Transactional
      public void update(UserEditForm userEditForm) {
