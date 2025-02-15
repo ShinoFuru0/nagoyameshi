@@ -1,20 +1,11 @@
 package com.example.nagoyameshi.controller;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -23,7 +14,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,257 +38,228 @@ import com.stripe.param.checkout.SessionCreateParams;
 @CrossOrigin
 @RequestMapping("/user")
 public class UserController {
- private final UserRepository userRepository;    
- private final UserService userService; 
- private final StripeService stripeService;     
- @Value("${stripe.api-key}")
- private String stripeApiKey;
- public UserController(UserRepository userRepository, UserService userService, StripeService stripeService) {
-         this.userRepository = userRepository; 
-         this.userService = userService; 
-         this.stripeService = stripeService;
-     }    
-     
-     @GetMapping
-     public String index(@AuthenticationPrincipal UserDetailsImpl userDetailsImpl, Model model) {         
-         User user = userRepository.getReferenceById(userDetailsImpl.getUser().getId());  
-         
-         model.addAttribute("user", user);
-         
-         return "user/index";
-     }
-     @GetMapping("/edit")
-     public String edit(@AuthenticationPrincipal UserDetailsImpl userDetailsImpl, Model model) {        
-         User user = userRepository.getReferenceById(userDetailsImpl.getUser().getId());  
-         UserEditForm userEditForm = new UserEditForm(user.getId(), user.getName(), user.getFurigana(),  user.getEmail());
-         
-         model.addAttribute("userEditForm", userEditForm);
-         
-         return "user/edit";
-     }    
-     @PostMapping("/update")
-     public String update(@ModelAttribute @Validated UserEditForm userEditForm, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
-         // メールアドレスが変更されており、かつ登録済みであれば、BindingResultオブジェクトにエラー内容を追加する
-         if (userService.isEmailChanged(userEditForm) && userService.isEmailRegistered(userEditForm.getEmail())) {
-             FieldError fieldError = new FieldError(bindingResult.getObjectName(), "email", "すでに登録済みのメールアドレスです。");
-             bindingResult.addError(fieldError);                       
-         }
-         
-         if (bindingResult.hasErrors()) {
-             return "user/edit";
-         }
-         
-         userService.update(userEditForm);
-         redirectAttributes.addFlashAttribute("successMessage", "会員情報を編集しました。");
-         
-         return "redirect:/user";
-     }    
-     
-     @GetMapping("/{id}/grade")
-     public String grade(@PathVariable(name = "id") Integer id, @AuthenticationPrincipal UserDetailsImpl userDetailsImpl,  
-             HttpServletRequest httpServletRequest,
-            Model model) {
-    	 User user = userDetailsImpl.getUser(); 
+    private final UserRepository userRepository;
+    private final UserService userService;
+    private final StripeService stripeService;
 
-          
-          return "user/{id}/grade";
-     }
-     
-//     サブスク料金の支払い
-     @PostMapping("/create-checkout-session")
-     public ResponseEntity<String> 
+    @Value("${stripe.api-key}")
+    private String stripeApiKey;
 
-     subscribeUser(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public UserController(UserRepository userRepository, UserService userService, StripeService stripeService) {
+        this.userRepository = userRepository;
+        this.userService = userService;
+        this.stripeService = stripeService;
+    }
 
-    		 @RequestBody Map<String, String> payload
-             ) {
-    	 Stripe.apiKey = stripeApiKey;
-    	 System.out.println("テスト");
+    // ユーザー情報を表示
+    @GetMapping
+    public String index(@AuthenticationPrincipal UserDetailsImpl userDetailsImpl, Model model) {
+        User user = userRepository.getReferenceById(userDetailsImpl.getUser().getId());
+        model.addAttribute("user", user);
+        return "user/index";
+    }
+
+    // ユーザー情報編集フォーム
+    @GetMapping("/edit")
+    public String edit(@AuthenticationPrincipal UserDetailsImpl userDetailsImpl, Model model) {
+        User user = userRepository.getReferenceById(userDetailsImpl.getUser().getId());
+        UserEditForm userEditForm = new UserEditForm(user.getId(), user.getName(), user.getFurigana(), user.getEmail());
+        model.addAttribute("userEditForm", userEditForm);
+        return "user/edit";
+    }
+
+    // ユーザー情報更新
+    @PostMapping("/update")
+    public String update(@ModelAttribute @Validated UserEditForm userEditForm, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        if (userService.isEmailChanged(userEditForm) && userService.isEmailRegistered(userEditForm.getEmail())) {
+            FieldError fieldError = new FieldError(bindingResult.getObjectName(), "email", "すでに登録済みのメールアドレスです。");
+            bindingResult.addError(fieldError);
+        }
+
+        if (bindingResult.hasErrors()) {
+            return "user/edit";
+        }
+
+        userService.update(userEditForm);
+        redirectAttributes.addFlashAttribute("successMessage", "会員情報を編集しました。");
+        return "redirect:/user";
+    }
+
+    // サブスク料金の支払い処理
+    @PostMapping("/create-checkout-session")
+    public ResponseEntity<String> subscribeUser(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody Map<String, String> payload) {
+        Stripe.apiKey = stripeApiKey;
+
+        try {
+            User user = userRepository.getReferenceById(userDetails.getUser().getId());
+
+            // 顧客IDがなければ作成
+            if (user.getCustomerId() == null) {
+                Customer customer = stripeService.createCustomer(user);
+                user.setCustomerId(customer.getId());
+                userRepository.save(user);
+            }
+
+            String customerId = user.getCustomerId();
+
+            // 支払い方法のチェック
+            PaymentMethod defaultPaymentMethod = stripeService.getDefaultPaymentMethod(customerId);
+            if (defaultPaymentMethod == null) {
+                String paymentMethodId = payload.get("paymentMethodId");
+                stripeService.attachPaymentMethodToCustomer(customerId, paymentMethodId);
+            }
+
+            // プランID（事前作成したStripeのID）
+            String planId = "price_1QqVPqC7xSmMs4vI9ZQ5EMzg";
+
+            // サブスクリプション作成
+            Subscription subscription = stripeService.createSubscription(user.getCustomerId(), planId);
+
+            // サブスクリプション作成後、ユーザーのロールを更新
+            stripeService.upgradeUserRoleToPaidMember(user.getId());
+
+            // StripeのCheckout Sessionを作成
+            SessionCreateParams params = SessionCreateParams.builder()
+                .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+                .setCustomer(user.getCustomerId())
+                .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                .setSuccessUrl("http://localhost:8080//user/success?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl("http://yourdomain.com/canceled")
+                .addLineItem(SessionCreateParams.LineItem.builder()
+                    .setPrice(planId)
+                    .setQuantity(1L)
+                    .build())
+                .build();
+
+            Session checkoutSession = Session.create(params);
+            return ResponseEntity.ok(checkoutSession.getId());
+
+        } catch (StripeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error while creating subscription: " + e.getMessage());
+        }
+    }
+    
+    
+ // 支払い方法更新
+    @PostMapping("/update-payment-method")
+    public ResponseEntity<String> updatePaymentMethod(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody Map<String, String> payload) {
+        try {
+            User user = userRepository.getReferenceById(userDetails.getUser().getId());
+            String customerId = user.getCustomerId();
+
+            if (customerId == null) {
+                return ResponseEntity.badRequest().body("Customer ID not found");
+            }
+
+            String newPaymentMethodId = payload.get("paymentMethodId");
+            if (newPaymentMethodId == null || newPaymentMethodId.isEmpty()) {
+                return ResponseEntity.badRequest().body("New payment method ID is missing");
+            }
+
+            // Stripe API の呼び出し
+            try {
+                stripeService.attachPaymentMethodToCustomer(customerId, newPaymentMethodId);
+                stripeService.updateDefaultPaymentMethod(customerId, newPaymentMethodId);
+            } catch (StripeException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error while updating payment method: " + e.getMessage());
+            }
+
+            return ResponseEntity.ok("Payment method updated successfully");
+
+        } catch (RuntimeException e) { // その他の例外処理（データベースエラー等）
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred: " + e.getMessage());
+        }
+    }
+
+    // 支払い方法更新
+   // @PostMapping("/update-payment-method")
+   // public ResponseEntity<String> updatePaymentMethod(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody Map<String, String> payload) {
+       
+   // 	try {
+    	    // Stripe API の処理（例: Session.retrieve は StripeException をスローする可能性がある）
+  //  	    Session session = Session.retrieve(sessionId);  
+  //  	    String customerId = session.getCustomer();
+
+    //	    User user = userRepository.findByCustomerId(customerId)
+    	//            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    	//    userRepository.save(user);
+    	//    redirectAttributes.addFlashAttribute("message", "支払処理が完了しました");
+
+    //	    return "redirect:/";
+    //	} catch (StripeException e) { // ここで StripeException をキャッチ
+    //	    model.addAttribute("error", e.getMessage());
+    //	    return "error";
+    //	}
     	
-try {
-User user = userRepository.getReferenceById(userDetails.getUser().getId());
+  //  }
+    	
+    	
+   // 	try {
+   //         User user = userRepository.getReferenceById(userDetails.getUser().getId());
+   //         String customerId = user.getCustomerId();
 
-// Stripeの顧客IDを確認し、必要なら作成
-if (user.getCustomerId() == null) {
-Customer customer = stripeService.createCustomer(user);
-user.setCustomerId(customer.getId());
-userRepository.save(user);
-}
+   //         if (customerId == null) {
+   //             return ResponseEntity.badRequest().body("Customer ID not found");
+   //         }
 
-System.out.println("テスト2");
-System.out.println("Name: " + user.getName());
+   //         String newPaymentMethodId = payload.get("paymentMethodId");
+   //         if (newPaymentMethodId == null || newPaymentMethodId.isEmpty()) {
+  //              return ResponseEntity.badRequest().body("New payment method ID is missing");
+   //         }
 
+    //        stripeService.attachPaymentMethodToCustomer(customerId, newPaymentMethodId);
+    //        stripeService.updateDefaultPaymentMethod(customerId, newPaymentMethodId);
 
-String customerId = user.getCustomerId();
-System.out.println("Customer ID: " + customerId);
-//顧客のデフォルト支払い方法を確認
-PaymentMethod defaultPaymentMethod = stripeService.getDefaultPaymentMethod(customerId);
+    //        return ResponseEntity.ok("Payment method updated successfully");
 
-// デフォルト支払い方法が存在しない場合、新しい支払い方法を追加
-if (defaultPaymentMethod == null) {
-    System.out.println("No default payment method found, attaching a new one.");
-    String paymentMethodId = payload.get("paymentMethodId");
-    stripeService.attachPaymentMethodToCustomer(customerId, paymentMethodId);
-} else {
-    System.out.println("Default payment method found: " + defaultPaymentMethod.getId());
-}
-String paymentMethodId = payload.get("paymentMethodId");
-stripeService.updateSubscription(customerId,paymentMethodId);
-System.out.println("テスト紐付け");
-// 事前に作成したプランIDでサブスクリプションを作成
-String planId = "price_1QqVPqC7xSmMs4vI9ZQ5EMzg"; // 事前にStripeで作成したプランIDを指定します
-System.out.println("プランID"+planId);
-Subscription subscription = stripeService.createSubscription(user.getCustomerId(), planId);
-//stripeService.createSubscription(user.getCustomerId(), planId);
-System.out.println("テスト３");
-stripeService.upgradeUserRoleToPaidMember(user.getId());
-System.out.println("テスト4");
+     //   } catch (StripeException e) {
+     //       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //            .body("Error while updating payment method: " + e.getMessage());
+    //    }
+  //  }
 
+    // サブスク成功
+ //   @GetMapping("/success")
+   // public String success(@RequestParam("session_id") String sessionId, Model model, RedirectAttributes redirectAttributes) {
+     //   try {
+       //     Session session = Session.retrieve(sessionId);
+         //   String customerId = session.getCustomer();
+         //   User user = userRepository.findByCustomerId(customerId).orElseThrow();
+         //   userRepository.save(user);
+         //   redirectAttributes.addFlashAttribute("message", "支払処理が完了しました");
+         //   return "redirect:/";
+        //} catch (StripeException e) {
+        //    model.addAttribute("error", e.getMessage());
+       //     return "error";
+       // }
+        
+        
+        
+     // サブスク成功
+        @GetMapping("/success")
+        public String success(@RequestParam("session_id") String sessionId, Model model, RedirectAttributes redirectAttributes) {
+            try {
+                // Stripe API の処理（Session.retrieve は StripeException をスローする可能性がある）
+                Session session = Session.retrieve(sessionId);  
+                String customerId = session.getCustomer();
 
-SessionCreateParams params = SessionCreateParams.builder()
-.addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
-.setCustomer(user.getCustomerId())
-.setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-.setSuccessUrl("http://localhost:8080//user/success?session_id={CHECKOUT_SESSION_ID}")
-.setCancelUrl("http://yourdomain.com/canceled")
-.addLineItem(SessionCreateParams.LineItem.builder()
-    .setPrice(planId)
-    .setQuantity(1L)
-    .build())
-.build();
+                User user = userRepository.findByCustomerId(customerId)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
 
-Session checkoutSession = Session.create(params);
-System.out.println(checkoutSession.getId());
+                userRepository.save(user);
+                redirectAttributes.addFlashAttribute("message", "支払処理が完了しました");
 
-SecurityContext auth = SecurityContextHolder.getContext();
-Collection<GrantedAuthority> authorities = new ArrayList<>();         
-authorities.add(new SimpleGrantedAuthority("ROLE_PAID_MEMBER"));
-auth.setAuthentication(new UsernamePasswordAuthenticationToken(userDetails,user.getPassword(),authorities));
-System.out.println("テスト5");
-//return ResponseEntity.ok("Subscription successful: " + subscription.getId());
-return ResponseEntity.ok(checkoutSession.getId());
-//return "user/success";
-} catch (StripeException e) {
-e.printStackTrace();
-return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-.body("Error while creating subscription: " + e.getMessage());
-}
-
-}
-
-
-     
-     @GetMapping("/cancel")
-     public String showCancelPage(@AuthenticationPrincipal UserDetailsImpl userDetailsImpl,Model model) throws StripeException {
-         // 必要に応じてモデルにデータを追加
-    	 User user = userDetailsImpl.getUser();
-
-    	 
-         return "user/cancel"; // cancel.htmlまたは対応するテンプレート名
-     }
-
-
-     
-     @PostMapping("/cancel-subscription")
-     public String cancelSubscriptionbtn(@RequestParam String paymentMethodId, Model model
-    		 							
-    		 							,@AuthenticationPrincipal UserDetailsImpl userDetails) {
-    	 User user = userRepository.getReferenceById(userDetails.getUser().getId());
-    	 
-    	    String customerId = user.getCustomerId();
-    	 System.out.println("テスト");
-    	   try {
-    	        // サブスクリプションIDを取得
-    		   System.out.println("テスト2");
-    	        String subscriptionId = stripeService.getSubscriptionIdForUser(customerId);
-    	        System.out.println("subscriptionId"+subscriptionId);
-    	        if (subscriptionId == null) {
-    	            model.addAttribute("message", "No active subscription found.");
-    	            return "user/cancelResult";
-    	        }
-
-    	        // サブスクリプションをキャンセル
-    	        Subscription subscription = Subscription.retrieve(subscriptionId);
-    	        subscription.cancel();
-
-    	        model.addAttribute("message", "Subscription canceled successfully.");
-    	    } catch (StripeException e) {
-    	        e.printStackTrace();
-    	        model.addAttribute("message", "Failed to cancel subscription: " + e.getMessage());
-    	    }
-    	   stripeService.upgradeUserRoleToGeneralMember(user.getId());
-    	   System.out.println("テスト3");
-    	   SecurityContext auth = SecurityContextHolder.getContext();
-    	   Collection<GrantedAuthority> authorities = new ArrayList<>();         
-    	   authorities.add(new SimpleGrantedAuthority("ROLE_GENERAL"));
-    	   auth.setAuthentication(new UsernamePasswordAuthenticationToken(userDetails,user.getPassword(),authorities));
-    	    return "user/cancelResult"; // 操作結果を表示するページ
-    	}
-     
-     
-     @GetMapping("/change")
-     public String change( @AuthenticationPrincipal UserDetailsImpl userDetailsImpl) {
-    	 User user = userDetailsImpl.getUser(); 
-
-          return "user/change";
-     }
- 
-     @PostMapping("/update-payment-method")
-     public ResponseEntity<String> updatePaymentMethod(
-         @AuthenticationPrincipal UserDetailsImpl userDetails,
-         @RequestBody Map<String, String> payload) {
-    	 System.out.println("テスト");
-         try {
-             User user = userRepository.getReferenceById(userDetails.getUser().getId());
-             String customerId = user.getCustomerId();
-             if (customerId == null) {
-                 return ResponseEntity.badRequest().body("Customer ID not found");
-             }
-             System.out.println("テスト1.5");
-             String newPaymentMethodId = payload.get("paymentMethodId");
-             if (newPaymentMethodId == null || newPaymentMethodId.isEmpty()) {
-                 return ResponseEntity.badRequest().body("New payment method ID is missing");
-             }
-             System.out.println("テスト2");
-             // 新しい支払い方法を顧客に追加
-             stripeService.attachPaymentMethodToCustomer(customerId, newPaymentMethodId);
-             System.out.println("テスト3");
-             // 顧客のデフォルト支払い方法を更新
-             stripeService.updateDefaultPaymentMethod(customerId, newPaymentMethodId);
-             System.out.println("テスト4");
-             return ResponseEntity.ok("Payment method updated successfully");
-             
-         } catch (StripeException e) {
-             e.printStackTrace();
-             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                 .body("Error while updating payment method: " + e.getMessage());
-         }
-     }
-     
-     
-     
-     
- //  サブスク料金支払処理が成功した後の処理
-     @GetMapping("/success")
-     public String success(@RequestParam("session_id") String sessionId, Model model, RedirectAttributes redirectAttributes) {
-         // セッションIDから関連するサブスクリプション情報を取得
-         try {
-             Session session = Session.retrieve(sessionId);
-             // 顧客情報（例として、顧客IDを取得）
-             String customerId = session.getCustomer();
-             // 顧客情報からユーザーを特定（仮定として、顧客IDをユーザーテーブルのフィールドとして保持）
-             User user = userRepository.findByCustomerId(customerId).orElseThrow();
-//             user.setSubscriptionStartDate(LocalDate.now());
-//             user.setSubscriptionEndDate(LocalDate.now().plusMonths(1));
-             
-             userRepository.save(user);
-             
-             redirectAttributes.addFlashAttribute("message", "支払処理が完了しました");
-             return "redirect:/";
-         } catch (StripeException e) {
-             model.addAttribute("error", e.getMessage());
-             return "error";
-         }
-     }
-
-}
+                return "redirect:/";
+            } catch (StripeException e) { // Stripe API 呼び出しの例外処理
+                model.addAttribute("error", e.getMessage());
+                return "error";
+            } catch (RuntimeException e) { // ユーザーが見つからない場合の処理
+                model.addAttribute("error", "ユーザーが見つかりませんでした。");
+                return "error";
+            }
+        }
+    }
