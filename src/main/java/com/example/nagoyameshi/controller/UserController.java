@@ -112,7 +112,7 @@ public class UserController {
             }
 
             // プランID（事前作成したStripeのID）
-            String planId = "price_1MHqDLDE8QnuZC9egb8tuRXw";
+            String planId = "price_1QqVPqC7xSmMs4vI9ZQ5EMzg";
 
             // サブスクリプション作成
             Subscription subscription = stripeService.createSubscription(user.getCustomerId(), planId);
