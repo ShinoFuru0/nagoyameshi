@@ -1,5 +1,6 @@
 package com.example.nagoyameshi.Service;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import com.stripe.model.Subscription;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.SubscriptionCreateParams;
+import com.stripe.param.SubscriptionListParams;
 
 @Service
 public class StripeService {
@@ -89,10 +91,38 @@ public class StripeService {
         return defaultPaymentMethodId != null ? PaymentMethod.retrieve(defaultPaymentMethodId) : null;
     }
 
+    public String getDefaultPaymentMethodId(String customerId) throws StripeException {
+        setApiKey();
+        Customer customer = Customer.retrieve(customerId);
+        return customer.getInvoiceSettings().getDefaultPaymentMethod();
+    }
+
     public void attachPaymentMethodToCustomer(String customerId, String paymentMethodId) throws StripeException {
         setApiKey();
         PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodId);
         paymentMethod.attach(Map.of("customer", customerId));
+    }
+
+    public void detachPaymentMethodFromCustomer(String paymentMethodId) throws StripeException {
+        setApiKey();
+        PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodId);
+        paymentMethod.detach();
+    }
+
+    public List<Subscription> getSubscriptions(String customerId) throws StripeException {
+        setApiKey();
+        SubscriptionListParams subscriptionListParams =
+            SubscriptionListParams.builder()
+                .setCustomer(customerId)
+                .build();
+        return Subscription.list(subscriptionListParams).getData();
+    }
+
+    public void cancelSubscriptions(List<Subscription> subscriptions) throws StripeException {
+        setApiKey();
+        for (Subscription subscription : subscriptions) {
+            subscription.cancel();
+        }
     }
 
     public void upgradeUserRoleToPaidMember(Integer userId) {
